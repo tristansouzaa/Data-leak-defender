@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Data Leak Defender</title>
+
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 0;
+      padding: 0;
+      width: 360px;
+      background: #f8f9fa;
+    }
+    .tabs {
+      display: flex;
+      background: #ddd;
+    }
+    .tab {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      background: #eee;
+      cursor: pointer;
+    }
+    .tab.active {
+      background: #fff;
+      font-weight: bold;
+      border-bottom: 2px solid #000;
+    }
+    .tab-content {
+      display: none;
+      padding: 16px;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+    }
+    button {
+      margin: 8px 4px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #pauseBtn {
+      background: #c62828;
+      color: #fff;
+    }
+    #resumeBtn {
+      background: #2e7d32;
+      color: #fff;
+    }
+    a {
+      color: #0d47a1;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .warning {
+      color: #d32f2f;
+      font-weight: bold;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" data-tab="home">Home</div>
+    <div class="tab" data-tab="customize">Customize</div>
+    <div class="tab" data-tab="test">Test</div>
+  </div>
+
+  <!-- Home -->
+  <div id="home" class="tab-content active">
+    <h2>Data Leak Defender</h2>
+    <p>Your extension is running and will alert you if sensitive data is sent off‑site.</p>
+    <button id="pauseBtn">Pause Protection</button>
+    <button id="resumeBtn" style="display:none">Resume Protection</button>
+    <p id="status"></p>
+  </div>
+
+  <!-- Customize -->
+  <div id="customize" class="tab-content">
+    <h2>Customize Detection</h2>
+    <div id="toggleContainer">Loading…</div>
+    <div id="passwordWrapper" style="display:none; margin-top:10px;">
+      <label for="customPasswordInput">Enter one or more passwords (one per line):</label><br>
+      <textarea id="customPasswordInput" rows="4" style="width:100%;"></textarea><br>
+      <button id="savePasswordBtn">Save Password(s)</button>
+    </div>
+  </div>
+
+  <!-- Test Tab -->
+  <div id="test" class="tab-content">
+    <h2>Test DLD</h2>
+    <p><b>View Source Code:</b><br>
+      <a href="https://github.com/tristansouza/Data-Leak-Defender" target="_blank">GitHub Repository</a>
+    </p>
+    <p><b>Test the extension locally:</b></p>
+    <ol>
+      <li>Locate <code>test.html</code> inside your extension folder</li>
+      <li>Right-click → Open with browser (or drag into Chrome)</li>
+      <li>Click “Simulate Leak” to trigger a detection</li>
+    </ol>
+    <p><b>Important:</b> Make sure file access is enabled!</p>
+    <div id="fileWarning" class="warning" style="display:none;">
+      ⚠️ File access is <u>disabled</u>. Enable it in <code>chrome://extensions</code>.
+    </div>
+  </div>
+
+  <!-- Link to script -->
+  <script src="popup.js"></script>
+
+  </script>
+</body>
+</html>
