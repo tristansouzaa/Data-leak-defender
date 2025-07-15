@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DLD Leak Test</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f1f3f5;
+      margin: 0;
+      padding: 40px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      background: white;
+      padding: 30px 40px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 500px;
+      width: 100%;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      margin-top: 25px;
+      padding: 12px 20px;
+      background: #007bff;
+      border: none;
+      color: white;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Data Leak Defender Test Form</h2>
+    <form id="leakForm">
+      <label for="ssn">SSN:</label>
+      <input type="text" id="ssn" value="123-45-6789">
+
+      <label for="phone">Phone:</label>
+      <input type="text" id="phone" value="+1 (555) 123-4567">
+
+      <label for="cc">Credit Card:</label>
+      <input type="text" id="cc" value="4111 1111 1111 1111">
+
+      <label for="cvv">CVV:</label>
+      <input type="text" id="cvv" value="123">
+
+      <label for="exp">Expiration Date:</label>
+      <input type="text" id="exp" value="12/27">
+
+      <button type="submit">Simulate Leak</button>
+    </form>
+  </div>
+
+<script>
+  document.getElementById("leakForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+const data = {
+  ssn: document.getElementById("ssn").value,
+  phoneNumber: document.getElementById("phone").value,      // 👈 FIXED
+  creditCardNumber: document.getElementById("cc").value,    // 👈 FIXED
+  cvv: document.getElementById("cvv").value,                // 👈 FIXED
+  expDate: document.getElementById("exp").value             // 👈 Optional
+};
+
+
+
+    console.log("Sending data:", data);
+
+    fetch("https://httpbin.org/post", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    })
+    .then(res => {
+      alert("Request sent. If DLD works, a popup should appear.");
+    })
+    .catch(err => {
+      alert("Error: " + err.message);
+    });
+  });
+</script>
