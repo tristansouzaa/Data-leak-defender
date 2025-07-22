@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>DLD Leak Test</title>
+  <title>DLD Leak Test (Improved)</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -51,57 +51,153 @@
     button:hover {
       background: #0056b3;
     }
+    .status {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 4px;
+      background: #f8f9fa;
+      border-left: 4px solid #6c757d;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Data Leak Defender Test Form</h2>
+    <h2>Data Leak Defender Test Form (Improved)</h2>
+    <div class="status" id="status">Status: Ready to test</div>
+        <p><strong>Please do not enter your own personal information in these fields. Simply fill out the rest of the boxes with the example info below.  . We require you to type out this info because  detection is only triggered when you type in personal info.</strong></p>
+    <p>You can fill out as many fields as you like</p>
+    <p><strong>Examples for each type of info:</strong><br>
+    SSN: 123-45-6789<br>
+    Phone: +1 (555) 123-4567<br>
+    Credit Card: 4111 1111 1111 1111<br>
+    CVV: 123<br>
+    Birth Date: 12/27</p>
     <form id="leakForm">
       <label for="ssn">SSN:</label>
-      <input type="text" id="ssn" value="123-45-6789">
+      <input type="text" id="ssn" value="123-45-678">
 
       <label for="phone">Phone:</label>
-      <input type="text" id="phone" value="+1 (555) 123-4567">
+      <input type="text" id="phone" value="+1 (555) 123-45">
 
       <label for="cc">Credit Card:</label>
-      <input type="text" id="cc" value="4111 1111 1111 1111">
+      <input type="text" id="cc" value="4111 1111 1111 111">
 
       <label for="cvv">CVV:</label>
-      <input type="text" id="cvv" value="123">
+      <input type="text" id="cvv" value="12">
 
       <label for="exp">Expiration Date:</label>
-      <input type="text" id="exp" value="12/27">
+      <input type="text" id="exp" value="12/2">
 
-      <button type="submit">Simulate Leak</button>
+      <button type="submit" id="submitBtn">Simulate Leak</button>
     </form>
+    
+    <div style="margin-top: 20px;">
+      <button id="testBtn" style="background: #28a745;">Test Alert Popup</button>
+    </div>
   </div>
 
 <script>
+  // Update status
+  function updateStatus(message, type = 'info') {
+    const statusEl = document.getElementById('status');
+    statusEl.textContent = `Status: ${message}`;
+    
+    // Reset styles
+    statusEl.style.borderLeftColor = '#6c757d';
+    statusEl.style.background = '#f8f9fa';
+    
+    if (type === 'success') {
+      statusEl.style.borderLeftColor = '#28a745';
+      statusEl.style.background = '#e8f5e9';
+    } else if (type === 'error') {
+      statusEl.style.borderLeftColor = '#dc3545';
+      statusEl.style.background = '#ffebee';
+    } else if (type === 'warning') {
+      statusEl.style.borderLeftColor = '#ffc107';
+      statusEl.style.background = '#fff8e1';
+    }
+  }
+
+  // Test button to directly trigger the alert popup
+  document.getElementById("testBtn").addEventListener("click", function() {
+    updateStatus("Testing alert popup...", "warning");
+    
+    // Try to access the extension's functions
+    try {
+      // This will only work if the page has access to the extension's functions
+      if (typeof createAlertPopup === 'function') {
+        createAlertPopup('test-domain.com', ['ssn'], 'TEST')
+          .then(() => {
+            updateStatus("Alert popup test succeeded - user clicked ALLOW", "success");
+          })
+          .catch(() => {
+            updateStatus("Alert popup test succeeded - user clicked BLOCK", "success");
+          });
+      } else {
+        // Create a message that the extension might intercept
+        const testData = {
+          ssn: "123-45-6789",
+          message: "This is a test message to trigger the alert popup"
+        };
+        
+        fetch("https://httpbin.org", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(testData)
+        })
+        .then(() => {
+          updateStatus("Test request sent. Check if popup appeared.", "warning");
+        })
+        .catch(err => {
+          if (err.message.includes("Data Leak Defender")) {
+            updateStatus("Extension blocked the request - working correctly!", "success");
+          } else {
+            updateStatus("Error: " + err.message, "error");
+          }
+        });
+      }
+    } catch (e) {
+      updateStatus("Error testing popup: " + e.message, "error");
+      console.error("Error testing popup:", e);
+    }
+  });
+
+  // Form submission
   document.getElementById("leakForm").addEventListener("submit", function (e) {
     e.preventDefault();
+    updateStatus("Sending data...", "warning");
 
-const data = {
-  ssn: document.getElementById("ssn").value,
-  phoneNumber: document.getElementById("phone").value,      // 👈 FIXED
-  creditCardNumber: document.getElementById("cc").value,    // 👈 FIXED
-  cvv: document.getElementById("cvv").value,                // 👈 FIXED
-  expDate: document.getElementById("exp").value             // 👈 Optional
-};
-
-
+    const data = {
+      ssn: document.getElementById("ssn").value,
+      phoneNumber: document.getElementById("phone").value,
+      creditCardNumber: document.getElementById("cc").value,
+      cvv: document.getElementById("cvv").value,
+      expDate: document.getElementById("exp").value
+    };
 
     console.log("Sending data:", data);
 
-    fetch("https://httpbin.org/post", {
+    // Disable the button during the request
+    document.getElementById("submitBtn").disabled = true;
+
+    fetch("https://httpbin.org", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     })
     .then(res => {
-      alert("Request sent. If DLD works, a popup should appear.");
+      document.getElementById("submitBtn").disabled = false;
+      updateStatus("Request sent successfully. If DLD works, a popup should have appeared.", "success");
     })
     .catch(err => {
-      alert("Error: " + err.message);
+      document.getElementById("submitBtn").disabled = false;
+      if (err.message.includes("Data Leak Defender")) {
+        updateStatus("Extension blocked the request - working correctly!", "success");
+      } else {
+        updateStatus("Error: " + err.message, "error");
+      }
     });
   });
 </script>
+</body>
+</html>
