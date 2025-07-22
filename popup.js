@@ -1,45 +1,13 @@
 const PATTERN_IDS = {
-  phoneNumber: true,
-  creditCardNumber: true,
-  cryptoAddresses: true,
-  emailAddress: true,
-  ipAddresses: true,
-  gpsCoordinates: true,
-  dateOfBirth: false,
-  ssn: true,
-  passportUS: true,
-  iban: false,
-  aba: false,
-  swift: true,
-  cvv: true,
-  vin: false,
-  dl_us: true,
-  homeAddress: true,
-  placeOfBirth: false,
-  employmentInformation: false,
+  
+
   user_password: false
 };
 
 const LABELS = {
-  phoneNumber: "Phone Number",
-  creditCardNumber: "Credit Card Number",
-  cryptoAddresses: "Crypto Addresses",
-  emailAddress: "Email Address",
-  ipAddresses: "IP Addresses",
-  gpsCoordinates: "GPS Coordinates",
-  dateOfBirth: "Date of Birth",
-  ssn: "Social Security Number",
-  passportUS: "Passport (US)",
-  iban: "IBAN Code",
-  aba: "ABA Routing Number",
-  swift: "SWIFT Code",
-  cvv: "CVV (4-digits on back)",
-  vin: "Vehicle Identification Number (VIN)",
-  dl_us: "Driver's License",
-  homeAddress: "Home Address",
-  placeOfBirth: "Place of Birth",
-  employmentInformation: "Employment Info",
-  user_password: "Custom Password (Set Below)"
+  
+
+  user_password: "Custom Password (Highly Recommended)"
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -84,25 +52,31 @@ document.addEventListener("DOMContentLoaded", () => {
     chrome.storage.local.set({ dld_paused: false }, () => updateStatus(false));
   });
 
+  // Build UI first with defaults
+  buildToggleUI();
+  
   // Main load logic
-  chrome.storage.local.get(["enabledPatterns", "customPasswordList"], ({ enabledPatterns = [], customPasswordList = [] }) => {
-    const defaultKeys = Object.entries(PATTERN_IDS)
-      .filter(([_, val]) => val)
-      .map(([key]) => key);
+  chrome.storage.local.get(["enabledPatterns", "customPasswordList"], ({ enabledPatterns, customPasswordList = [] }) => {
+    // If no saved patterns, use defaults and save them
+    if (!enabledPatterns || !Array.isArray(enabledPatterns)) {
+      const defaultKeys = Object.entries(PATTERN_IDS)
+        .filter(([_, val]) => val)
+        .map(([key]) => key);
+      enabledPatterns = defaultKeys;
+      chrome.storage.local.set({ enabledPatterns });
+    }
 
-    const same =
-      enabledPatterns.length === defaultKeys.length &&
-      defaultKeys.every(k => enabledPatterns.includes(k));
-
-    const useSet = new Set(same ? enabledPatterns : defaultKeys);
-    if (!same) chrome.storage.local.set({ enabledPatterns: [...useSet] });
-
-    buildToggleUI(useSet);
+    // Update checkboxes with saved/default patterns
+    const enabledSet = new Set(enabledPatterns);
+    container.querySelectorAll(".toggle").forEach(cb => {
+      cb.checked = enabledSet.has(cb.dataset.type);
+    });
+    
     passwordInput.value = (customPasswordList || []).join("\n");
-    passwordWrapper.style.display = useSet.has("user_password") ? "block" : "none";
+    passwordWrapper.style.display = enabledSet.has("user_password") ? "block" : "none";
   });
 
-  function buildToggleUI(activeSet) {
+  function buildToggleUI() {
     container.innerHTML = "";
     Object.keys(PATTERN_IDS).forEach(key => {
       const label = document.createElement("label");
@@ -110,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
       cb.type = "checkbox";
       cb.className = "toggle";
       cb.dataset.type = key;
-      cb.checked = activeSet.has(key);
+      cb.checked = PATTERN_IDS[key]; // Use default from PATTERN_IDS
 
       label.appendChild(cb);
       label.appendChild(document.createTextNode(" " + (LABELS[key] || key)));
@@ -148,25 +122,4 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("⚠️ Please enter a valid password.");
     }
   });
-});
-// Tab switching
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll(".tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-      document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove("active"));
-      tab.classList.add("active");
-      document.getElementById(tab.dataset.tab).classList.add("active");
-    });
-  });
-
-  // Check for file:// access permission
-  if (chrome.extension.isAllowedFileSchemeAccess) {
-    chrome.extension.isAllowedFileSchemeAccess(allowed => {
-      if (!allowed) {
-        const fileWarning = document.getElementById("fileWarning");
-        if (fileWarning) fileWarning.style.display = "block";
-      }
-    });
-  }
 });
